@@ -7,7 +7,13 @@ defmodule Omen.MixProject do
       version: "0.1.0",
       elixir: "~> 1.8",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      elixirc_paths: elixirc_paths(Mix.env()),
+      aliases: aliases(),
+      preferred_cli_env: [
+        "ecto.gen.migration": :test,
+        "test.reset": :test
+      ]
     ]
   end
 
@@ -19,11 +25,21 @@ defmodule Omen.MixProject do
     ]
   end
 
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
+
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      # {:dep_from_hexpm, "~> 0.3.0"},
-      # {:dep_from_git, git: "https://github.com/elixir-lang/my_dep.git", tag: "0.1.0"}
+      {:oban, "~> 0.3.0"},
+      {:ex_doc, "~> 0.20.0", only: :dev, runtime: false}
+    ]
+  end
+
+  defp aliases do
+    [
+      test: ["ecto.create --quiet", "ecto.migrate", "test"],
+      "test.reset": ["ecto.drop"]
     ]
   end
 end
