@@ -5,6 +5,6 @@ defmodule Omen.PingWorker do
   def action(%{"pid" => test} = args) do
     test = :erlang.list_to_pid(test)
     send(test, {:pong, args})
-    {:result, args}
+    {:ok, {:result, args}}
   end
 end

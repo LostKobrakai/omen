@@ -12,7 +12,7 @@ defmodule Omen.TaskGoneWorker do
     receive do
       {:DOWN, ^ref, :process, ^spawned_process, _reason} ->
         Process.sleep(100)
-        :ok
+        {:ok, :ok}
     end
   end
 
@@ -20,5 +20,6 @@ defmodule Omen.TaskGoneWorker do
   def on_task_gone(%{"pid" => test} = args, result) do
     test = :erlang.list_to_pid(test)
     send(test, {:on_task_gone, args, result})
+    {:ok, result}
   end
 end

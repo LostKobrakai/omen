@@ -4,6 +4,6 @@ defmodule Omen.SleepWorker do
   @impl Omen.Worker
   def action(%{"sleep" => timeout}) do
     Process.sleep(timeout)
-    :ok
+    {:ok, :ok}
   end
 end

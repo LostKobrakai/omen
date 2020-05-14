@@ -24,7 +24,7 @@ defmodule Omen.Worker do
   """
   @type result :: term
 
-  @callback action(args :: map) :: result
+  @callback action(args :: map) :: {:ok, result} | {:error, error} | no_return
   @callback on_task_gone(args :: map, result) :: term
   @optional_callbacks on_task_gone: 2
 
@@ -35,15 +35,16 @@ defmodule Omen.Worker do
       alias unquote(__MODULE__), as: OmenWorker
 
       @impl Oban.Worker
-      def perform(args) do
+      def perform(args, _job) do
         {uuid, args} = Map.pop(args, "uuid")
 
         unless is_binary(uuid) do
           raise "Tried to use #{inspect(OmenWorker)} by directly intersting it in the database."
         end
 
-        result = OmenWorker.run_action(__MODULE__, args)
-        OmenWorker.handle_action_result(__MODULE__, uuid, args, result)
+        with {:ok, result} <- OmenWorker.run_action(__MODULE__, args) do
+          OmenWorker.handle_action_result(__MODULE__, uuid, args, result)
+        end
       end
     end
   end
@@ -61,9 +62,12 @@ defmodule Omen.Worker do
   # execute `on_task_gone/2` on the worker module.
   @spec handle_action_result(module(), Omen.Registry.uuid(), map, result) :: term
   def handle_action_result(worker, uuid, args, result) do
-    with :error <- Omen.Registry.send_message(uuid, {:omen_response, result}),
-         true <- function_exported?(worker, :on_task_gone, 2) do
-      worker.on_task_gone(args, result)
+    with :error <- Omen.Registry.send_message(uuid, {:omen_response, result}) do
+      if function_exported?(worker, :on_task_gone, 2) do
+        worker.on_task_gone(args, result)
+      else
+        {:ok, result}
+      end
     end
   end
 
